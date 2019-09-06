@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	url = "http://mega-film.top/browse/0/4/0/0?category=4&s_ad=0"
-	filmsFile = "names.txt"
+	url          = "http://mega-film.top/browse/0/4/0/0?category=4&s_ad=0"
+	filmsFile    = "names.txt"
 	alreadyFound = "found.txt"
-	tag = "#index > table > tbody > tr > td:nth-child(2) > a:nth-child(3)"
+	tag          = "#index > table > tbody > tr > td:nth-child(2) > a:nth-child(3)"
 )
 
 func getBody(url string) io.ReadCloser {
@@ -37,12 +37,12 @@ func parseString(s string) []string {
 	if !strings.Contains(s, "\"") {
 		return strings.Fields(s)
 	}
-	if strings.Count(s, "\"") % 2 != 0 {
+	if strings.Count(s, "\"")%2 != 0 {
 		return []string{}
 	}
 	result := make([]string, 0)
 	for i, word := range strings.Split(s, "\"") {
-		if i % 2 == 0 {
+		if i%2 == 0 {
 			if word != "" {
 				result = append(result, strings.Fields(word)...)
 			}
@@ -149,10 +149,12 @@ func filterAlreadyFound(fileName string, serials []string) []string {
 	return result
 }
 
-
 func main() {
 	body := getBody(url)
-	files := getFilesList(filmsFile)
+	files := getFilms()
+	if len(files) == 0 {
+		files = getFilesList(filmsFile)
+	}
 	serials := getSerialsFromSite(body, tag)
 	result := filterAlreadyFound(alreadyFound, findContains(serials, files))
 	if len(result) > 0 {
