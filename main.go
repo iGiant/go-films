@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 const (
@@ -201,6 +202,7 @@ func main() {
 			if err == nil {
 				break
 			}
+			time.Sleep(5 * time.Second)
 		}
 		if err != nil {
 			_ = slack_client.SendToSlack(
