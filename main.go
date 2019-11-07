@@ -2,35 +2,44 @@ package main
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"github.com/iGiant/go-libs/slkclient"
+	"github.com/go-ini/ini"
+	"github.com/iGiant/go-slack_client"
+	"github.com/iGiant/proxies"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
+	"path"
 	"strings"
 )
 
 const (
-	url          = "http://mega-film.top/browse/0/4/0/0?category=4&s_ad=0"
-	filmsFile    = "names.txt"
-	alreadyFound = "found.txt"
-	tag          = "#index > table > tbody > tr > td:nth-child(2) > a:nth-child(3)"
+	filename = "films.ini"
 )
 
-func getBody(url string) io.ReadCloser {
-	client := http.Client{}
-	request, err := http.NewRequest("GET", url, nil)
+type site struct {
+	url          string
+	subUrl       string
+	filmsFile    string
+	alreadyFound string
+	tag          string
+}
+
+func getFromIni(fileName string) (site, error) {
+	cfg, err := ini.Load(fileName)
 	if err != nil {
-		log.Fatal(err)
+		return site{}, err
 	}
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Fatal(err)
+	result := site{
+		url:          cfg.Section("site").Key("url").String(),
+		subUrl:       cfg.Section("site").Key("subUrl").String(),
+		filmsFile:    cfg.Section("site").Key("filmsFile").String(),
+		alreadyFound: cfg.Section("site").Key("alreadyFound").String(),
+		tag:          strings.ReplaceAll(cfg.Section("site").Key("tag").String(), "№", "#"),
 	}
-	if resp.StatusCode != 200 {
-		log.Fatal("код ошибки:", resp.StatusCode)
-	}
-	return resp.Body
+	return result, nil
 }
 
 func parseString(s string) []string {
@@ -69,7 +78,7 @@ func getFilesList(fileName string) [][]string {
 	return result
 }
 
-func getSerialsFromSite(body io.ReadCloser, tag string) []string {
+func getFilmsFromSite(body io.ReadCloser, tag string) []string {
 	document, err := goquery.NewDocumentFromReader(body)
 	if err != nil {
 		log.Fatal(err)
@@ -77,7 +86,9 @@ func getSerialsFromSite(body io.ReadCloser, tag string) []string {
 	result := make([]string, 0)
 	document.Find(tag).Each(func(i int, selection *goquery.Selection) {
 		name := selection.Text()
-		result = append(result, strings.TrimSpace(name))
+		if isQuality(name) {
+			result = append(result, strings.TrimSpace(name))
+		}
 	})
 	return result
 }
@@ -125,11 +136,14 @@ func findContains(serials []string, names [][]string) []string {
 	return result
 }
 
+func isQuality(name string) bool {
+	temp := strings.Split(name, "|")
+	quality := strings.TrimSpace(temp[len(temp)-1])
+	return strings.EqualFold(quality, "iTunes") || strings.EqualFold(quality, "Лицензия")
+}
+
 func filterAlreadyFound(fileName string, serials []string) []string {
-	body, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
+	body, _ := ioutil.ReadFile(fileName)
 	already := make([]string, 0)
 	for _, file := range strings.Split(string(body), "\n") {
 		if file != "" {
@@ -144,26 +158,71 @@ func filterAlreadyFound(fileName string, serials []string) []string {
 	}
 	if len(result) != 0 {
 		already = append(already, result...)
-		_ = ioutil.WriteFile(fileName, []byte(strings.Join(already, "\n")), 0644)
+		_ = ioutil.WriteFile(fileName, []byte(strings.Join(already, "\n")), 0777)
 	}
 	return result
 }
 
 func main() {
-	body := getBody(url)
-	files := getFilms()
-	if len(files) == 0 {
-		files = getFilesList(filmsFile)
+	param, err := getFromIni(filename)
+	if err != nil {
+		os.Exit(1)
 	}
-	serials := getSerialsFromSite(body, tag)
-	result := filterAlreadyFound(alreadyFound, findContains(serials, files))
+	var proxiesList []string
+	for i := 0; i < 3; i++ {
+		proxiesList, err = proxies.GetProxiesList()
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		_ = slack_client.SendToSlack(":film_frames: Films (Ошибка)",
+			"Недоступен сайт с proxy",
+			"@sergey_gr",
+			"",
+			"",
+		)
+		os.Exit(2)
+	}
+	needFilms := getFilmsFromTrello()
+	if len(needFilms) == 0 {
+		needFilms = getFilesList(param.filmsFile)
+		if len(needFilms) == 0 {
+			os.Exit(3)
+		}
+	}
+	result := make([]string, 0)
+	for _, film := range needFilms {
+		u, _ := url.Parse(param.url)
+		u.Path = path.Join(u.Path, param.subUrl, film[0])
+		var response *http.Response
+		for _, proxy := range proxiesList {
+			response, err = proxies.GetSite(u.String(), proxy)
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			_ = slack_client.SendToSlack(
+				":film_frames: Films (Ошибка)",
+				"Нет рабочих proxy-серверов",
+				"@sergey_gr",
+				"",
+				"",
+			)
+			os.Exit(4)
+		}
+		films := getFilmsFromSite(response.Body, param.tag)
+		_ = response.Body.Close()
+		result = append(result, filterAlreadyFound(param.alreadyFound, findContains(films, needFilms))...)
+	}
 	if len(result) > 0 {
 		var text string
 		if len(result) == 1 {
-			text = "Появился сериал: " + result[0]
+			text = "Появился фильм: " + result[0]
 		} else {
-			text = "Появились сериалы:\n" + strings.Join(result, "\n")
+			text = "Появились фильмы:\n" + strings.Join(result, "\n")
 		}
-		_ = slkclient.SendToSlack(":film_frames: Serial", text, "@sergey_gr", "", "")
+		_ = slack_client.SendToSlack(":film_frames: Films", text, "@sergey_gr", "", "")
 	}
 }
