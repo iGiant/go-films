@@ -1,3 +1,5 @@
+github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
+github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/PuerkitoBio/goquery v1.5.0 h1:uGvmFXOA73IKluu/F84Xd1tt/z07GYm8X49XKHP7EJk=
 github.com/PuerkitoBio/goquery v1.5.0/go.mod h1:qD2PgZ9lccMbQlc7eEOjaeRlFQON7xY8kdmcsrnKqMg=
 github.com/VojtechVitek/go-trello v0.0.0-20161023024849-28ebf2756ecc h1:vF1P0a6DTmkw1EojG7pldQdptBsKojPVdeO7+FY2h/4=
@@ -10,10 +12,8 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGa
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/iGiant/go-slack_client v0.0.1 h1:k7aptVkA9YWASd9rbP9eodIHUFKDLm80tpPBbmk3FhU=
 github.com/iGiant/go-slack_client v0.0.1/go.mod h1:tdI+zyu8LXmJMlvo839r8oH1/dSn7QnO8SSWCCl6wjA=
-github.com/iGiant/lawfilter v0.0.2 h1:Hus5JBqUF8waBJP9u6aP5lreiRQV+RAWjcdz+E+QSZ8=
-github.com/iGiant/lawfilter v0.0.2/go.mod h1:G5OemVw3uJtrGX5Npc9HWup9h8A9w7YQHRm7xbAraxs=
-github.com/iGiant/proxies v0.0.2 h1:kvt7M3RCUQt2sfX98GM4uBGRUyCSdgTDwUAyBhSTrKM=
-github.com/iGiant/proxies v0.0.2/go.mod h1:bNdV8Q5eZkAcB2caTfw9+hgV8ZUFY7EPBTNXi3JdLTo=
+github.com/iGiant/proxies v0.0.4 h1:UtZSP/U3KM1uhPhcIu6LRymplpTY2xqZRfTMC2kZIi0=
+github.com/iGiant/proxies v0.0.4/go.mod h1:bNdV8Q5eZkAcB2caTfw9+hgV8ZUFY7EPBTNXi3JdLTo=
 github.com/igiant/go-crypter v0.1.0 h1:mKlIZrSj7yqEzsw1hUpmEY5daBoMnGjxJ6/844YfYUs=
 github.com/igiant/go-crypter v0.1.0/go.mod h1:+VXQqQsYukfcaFe2MuF+il2QyLcYmWI+TymVoxVcsWI=
 github.com/igiant/go-send_mail v0.0.1 h1:DMEONRNWNncajhwzmcE5fy4HYI2CArpZv2y1ydNKqRw=

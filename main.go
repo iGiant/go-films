@@ -108,29 +108,34 @@ func all(s string, sub []string) bool {
 }
 
 func or(s string, sub []string) bool {
+	s = yo2e(s)
 	for _, item := range sub {
-		if strings.Contains(strings.ToLower(s), strings.ToLower(item)) {
+		if strings.Contains(strings.ToLower(s), strings.ToLower(yo2e(item))) {
 			return true
 		}
 	}
 	return false
+}
+func yo2e(value string) string {
+	return strings.ReplaceAll(value, "ё", "е")
 }
 
 func any(s string, sub []string) bool {
+	s = yo2e(s)
 	for _, item := range sub {
-		if strings.EqualFold(s, item) {
+		if strings.EqualFold(s, yo2e(item)) {
 			return true
 		}
 	}
 	return false
 }
 
-func findContains(serials []string, names [][]string) []string {
+func findContains(films []string, names [][]string) []string {
 	result := make([]string, 0)
-	for _, serial := range serials {
+	for _, film := range films {
 		for _, name := range names {
-			if all(serial, name) {
-				result = append(result, serial)
+			if all(film, name) {
+				result = append(result, film)
 			}
 		}
 	}
@@ -143,7 +148,7 @@ func isQuality(name string) bool {
 	return strings.EqualFold(quality, "iTunes") || strings.EqualFold(quality, "Лицензия")
 }
 
-func filterAlreadyFound(fileName string, serials []string) []string {
+func filterAlreadyFound(fileName string, films []string) []string {
 	body, _ := ioutil.ReadFile(fileName)
 	already := make([]string, 0)
 	for _, file := range strings.Split(string(body), "\n") {
@@ -152,9 +157,9 @@ func filterAlreadyFound(fileName string, serials []string) []string {
 		}
 	}
 	result := make([]string, 0)
-	for _, serial := range serials {
-		if !any(serial, already) {
-			result = append(result, serial)
+	for _, film := range films {
+		if !any(film, already) {
+			result = append(result, film)
 		}
 	}
 	if len(result) != 0 {
