@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/BurntSushi/toml"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/go-ini/ini"
 	"github.com/iGiant/go-slack_client"
 	"github.com/iGiant/proxies"
 	"io"
@@ -17,28 +17,22 @@ import (
 )
 
 const (
-	filename = "films.ini"
+	filename = "films.toml"
 )
 
 type site struct {
-	url          string
-	subUrl       string
-	filmsFile    string
-	alreadyFound string
-	tag          string
+	Url          string `toml:"url"`
+	SubUrl       string `toml:"sub_url"`
+	FilmsFile    string `toml:"film_file"`
+	AlreadyFound string `toml:"already_found"`
+	Tag          string `toml:"tag"`
 }
 
-func getFromIni(fileName string) (site, error) {
-	cfg, err := ini.Load(fileName)
+func parseFile(fileName string) (site, error) {
+	result := site{}
+	_, err := toml.DecodeFile(fileName, &result)
 	if err != nil {
 		return site{}, err
-	}
-	result := site{
-		url:          cfg.Section("site").Key("url").String(),
-		subUrl:       cfg.Section("site").Key("subUrl").String(),
-		filmsFile:    cfg.Section("site").Key("filmsFile").String(),
-		alreadyFound: cfg.Section("site").Key("alreadyFound").String(),
-		tag:          strings.ReplaceAll(cfg.Section("site").Key("tag").String(), "№", "#"),
 	}
 	return result, nil
 }
@@ -170,7 +164,7 @@ func filterAlreadyFound(fileName string, films []string) []string {
 }
 
 func main() {
-	param, err := getFromIni(filename)
+	param, err := parseFile(filename)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -192,15 +186,15 @@ func main() {
 	}
 	needFilms := getFilmsFromTrello()
 	if len(needFilms) == 0 {
-		needFilms = getFilesList(param.filmsFile)
+		needFilms = getFilesList(param.FilmsFile)
 		if len(needFilms) == 0 {
 			os.Exit(3)
 		}
 	}
 	result := make([]string, 0)
 	for _, film := range needFilms {
-		u, _ := url.Parse(param.url)
-		u.Path = path.Join(u.Path, param.subUrl, film[0])
+		u, _ := url.Parse(param.Url)
+		u.Path = path.Join(u.Path, param.SubUrl, film[0])
 		var response *http.Response
 		for _, proxy := range proxiesList {
 			response, err = proxies.GetSite(u.String(), proxy)
@@ -219,9 +213,9 @@ func main() {
 			)
 			os.Exit(4)
 		}
-		films := getFilmsFromSite(response.Body, param.tag)
+		films := getFilmsFromSite(response.Body, param.Tag)
 		_ = response.Body.Close()
-		result = append(result, filterAlreadyFound(param.alreadyFound, findContains(films, needFilms))...)
+		result = append(result, filterAlreadyFound(param.AlreadyFound, findContains(films, needFilms))...)
 	}
 	if len(result) > 0 {
 		var text string

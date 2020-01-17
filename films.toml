@@ -1,0 +1,5 @@
+url = "http://proxy-rutor.org/"
+sub_url = "search/0/0/0/0/"
+films_file = "names.txt"
+already_found = "found.txt"
+tag = "#index > table > tbody > tr > td:nth-child(2) > a:nth-child(3)"
